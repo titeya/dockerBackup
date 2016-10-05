@@ -39,13 +39,13 @@ FTP_DIRECTORY=${FTP_DIRECTORY}
 
 BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} ${EXTRA_OPTS}"
 
-BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} --all-databases > /backup/"'${BACKUP_NAME}'"/MYSQL/databases.sql"
+BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} ${i} > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
 
 BACKUP_FTP_MONGO="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MONGO_NAME}"
 
 BACKUP_FTP_MYSQL="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MYSQL_NAME}"
 
-BACKUP_FTP_FILES="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY}/backup/${BACKUP_NAME} /exports"
+BACKUP_FTP_FILES="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY}/backup/"'${BACKUP_NAME}'" /exports"
 
 
 echo "=> Creating backup script"
@@ -69,12 +69,17 @@ else
 fi
 
 BACKUP_MYSQL_NAME=MYSQL
-if ${BACKUP_MYSQL_CMD} ;then
-    echo "   Dump Mysql succeeded"
-else
-    echo "   Dump Mysql failed"
-    rm -rf /backup/\${BACKUP_NAME}/MYSQL
-fi
+
+for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u\${MYSQL_USER} -p\${MYSQL_PASS} | grep -v 'Database\|information_schema\|mys ql\|performance_schema'); do
+  if ${BACKUP_MYSQL_CMD} ;then
+      echo "   Dump Mysql \$i succeeded"
+  else
+      echo "   Dump Mysql \$i failed"
+      rm -rf /backup/\${BACKUP_NAME}/MYSQL/\$i.sql
+  fi
+done
+
+
 
 if ${BACKUP_FTP_MONGO} ;then
     echo "   Backup Mongo succeeded"
