@@ -41,11 +41,11 @@ BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONG
 
 BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
 
-BACKUP_FTP_MONGO="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MONGO_NAME}/\${i}"
+BACKUP_FTP_MONGO="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MONGO_NAME}"
 
 BACKUP_FTP_MYSQL="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MYSQL_NAME}"
 
-BACKUP_FTP_FILES="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY}/backup/"'${BACKUP_NAME}'" /backup/"
+BACKUP_FTP_FILES="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY}/backup/"'${BACKUP_NAME}'" /backup/"'${i}'".tar.gz"
 
 
 echo "=> Creating backup script"
@@ -70,7 +70,7 @@ fi
 
 for i in \$(ls /backup/\${BACKUP_NAME}/MONGO -N1); do
   tar czvf /backup/\${BACKUP_NAME}/MONGO/\${i}.tar.gz /backup/\${BACKUP_NAME}/MONGO/\${i}
-  rm -f /backup/\${BACKUP_NAME}/MONGO/\${i}
+  rm -rf /backup/\${BACKUP_NAME}/MONGO/\${i}
 done
 
 if ${BACKUP_FTP_FILES} ;then
