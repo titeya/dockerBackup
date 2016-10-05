@@ -56,7 +56,7 @@ MAX_BACKUPS=${MAX_BACKUPS}
 
 
 echo "=> Backup started"
-BACKUP_NAME=\$(date +\%Y.\%m.\%d.\%H\%M\%S)
+BACKUP_NAME=backup_\$(date +\%Y.\%m.\%d.\%H\%M)
 
 mkdir -p /backup/\${BACKUP_NAME}/MONGO
 mkdir -p /backup/\${BACKUP_NAME}/MYSQL
@@ -79,8 +79,6 @@ for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u
   fi
 done
 
-
-
 if ${BACKUP_FTP_MONGO} ;then
     echo "   Backup Mongo succeeded"
     rm -rf /backup/\${BACKUP_NAME}/MONGO
@@ -101,6 +99,16 @@ if ${BACKUP_FTP_FILES} ;then
     echo "   Backup Files succeeded"
 else
     echo "   Backup Files failed"
+fi
+
+if [ -n "\${MAX_BACKUPS}" ]; then
+    while [ ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | wc -l) -gt \${MAX_BACKUPS} ];
+    do
+        BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | grep Backup | head -1)
+        echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
+        ncftp -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST}
+        rmdir \${FTP_DIRECTORY}/backup/\${BACKUP_TO_BE_DELETED}
+    done
 fi
 
 echo "=> Remove Backup Directory"
