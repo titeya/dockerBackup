@@ -41,11 +41,11 @@ BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONG
 
 BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
 
-BACKUP_FTP_MONGO="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MONGO_NAME}"
+BACKUP_FTP_MONGO="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MONGO_NAME}/\${i}"
 
 BACKUP_FTP_MYSQL="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MYSQL_NAME}"
 
-BACKUP_FTP_FILES="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY}/backup/"'${BACKUP_NAME}'" /exports"
+BACKUP_FTP_FILES="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY}/backup/"'${BACKUP_NAME}'" /backup/"
 
 
 echo "=> Creating backup script"
@@ -56,7 +56,7 @@ MAX_BACKUPS=${MAX_BACKUPS}
 
 
 echo "=> Backup started"
-BACKUP_NAME=backup_\$(date +\%Y.\%m.\%d.\%H\%M)
+BACKUP_NAME=backup_\$(date +\%Y.\%m.\%d.\%H)
 
 mkdir -p /backup/\${BACKUP_NAME}/MONGO
 mkdir -p /backup/\${BACKUP_NAME}/MYSQL
@@ -66,6 +66,19 @@ if ${BACKUP_MONGO_CMD} ;then
 else
     echo "   Dump Mongo failed"
     rm -rf /backup/\${BACKUP_NAME}/MONGO
+fi
+
+for i in \$(ls /backup/\${BACKUP_NAME}/MONGO -N1); do
+  tar czvf /backup/\${BACKUP_NAME}/MONGO/\${i}.tar.gz /backup/\${BACKUP_NAME}/MONGO/\${i}
+  rm -f /backup/\${BACKUP_NAME}/MONGO/\${i}
+done
+
+if ${BACKUP_FTP_FILES} ;then
+    echo "   Backup \$i.tar.gz succeeded"
+    rm -f /backup/\${BACKUP_NAME}/MONGO
+else
+    echo "   Backup \$i.tar.gz failed"
+    rm -f /backup/\${BACKUP_NAME}/MONGO
 fi
 
 BACKUP_MYSQL_NAME=MYSQL
@@ -95,19 +108,24 @@ else
     rm -rf /backup/\${BACKUP_NAME}/MYSQL
 fi
 
-if ${BACKUP_FTP_FILES} ;then
-    echo "   Backup Files succeeded"
-else
-    echo "   Backup Files failed"
-fi
+for i in \$(ls /exports/ -N1); do
+  cd /backup
+  tar czvf \${i}.tar.gz /exports/\${i}
+  if ${BACKUP_FTP_FILES} ;then
+      echo "   Backup \$i succeeded"
+      rm -f /backup/\$i.tar.gz
+  else
+      echo "   Backup \$i failed"
+      rm -f /backup/\$i.tar.gz
+  fi
+done
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    while [ ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | wc -l) -gt \${MAX_BACKUPS} ];
+    while [ \$(ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}\${FTP_DIRECTORY}/backup | wc -l) -gt \${MAX_BACKUPS} ];
     do
-        BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | grep Backup | head -1)
+        BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1tr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | grep backup | head -1)
         echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
-        ncftp -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST}
-        rmdir \${FTP_DIRECTORY}/backup/\${BACKUP_TO_BE_DELETED}
+        echo "rm -rf \${FTP_DIRECTORY}/backup/\${BACKUP_TO_BE_DELETED}" | ncftp -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} \${FTP_HOST}
     done
 fi
 
