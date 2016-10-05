@@ -39,7 +39,7 @@ FTP_DIRECTORY=${FTP_DIRECTORY}
 
 BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} ${EXTRA_OPTS}"
 
-BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} ${i} > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
+BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
 
 BACKUP_FTP_MONGO="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_MONGO_NAME}"
 
@@ -70,7 +70,7 @@ fi
 
 BACKUP_MYSQL_NAME=MYSQL
 
-for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u\${MYSQL_USER} -p\${MYSQL_PASS} | grep -v 'Database\|information_schema\|mys ql\|performance_schema'); do
+for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u\${MYSQL_USER} -p\${MYSQL_PASS} | grep -v 'Database\|information_schema\|mysql\|performance_schema'); do
   if ${BACKUP_MYSQL_CMD} ;then
       echo "   Dump Mysql \$i succeeded"
   else
