@@ -81,6 +81,13 @@ for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u
 done
 
 
+for i in \$(ls /backup/\${BACKUP_NAME}/MYSQL -N1); do
+  cd
+  tar czvf /backup/\${BACKUP_NAME}/MYSQL/\${i}.tar.gz -C /backup/\${BACKUP_NAME}/MYSQL \${i}
+  rm -rf /backup/\${BACKUP_NAME}/MYSQL/\${i}
+done
+
+
 for i in \$(ls /exports/ -N1); do
   tar czvf /backup/\${BACKUP_NAME}/FILES/\${i}.tar.gz -C /exports \${i}
 done
@@ -96,8 +103,12 @@ if [ -n "\${MAX_BACKUPS}" ]; then
     while [ \$(ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}\${FTP_DIRECTORY}/backup | wc -l) -gt \${MAX_BACKUPS} ];
     do
         BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1tr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | grep backup | head -1)
-        echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
-        echo "rm -rf \${FTP_DIRECTORY}/backup/\${BACKUP_TO_BE_DELETED}" | ncftp -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} \${FTP_HOST}
+        if \${BACKUP_TO_BE_DELETED} ;then
+          echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
+          echo "rm -rf \${FTP_DIRECTORY}/backup/\${BACKUP_TO_BE_DELETED}" | ncftp -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} \${FTP_HOST}
+        else
+          echo "    No backup to delete..."
+        fi
     done
 fi
 
