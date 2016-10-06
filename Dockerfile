@@ -10,6 +10,8 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10 && \
     echo "mongodb-org-tools hold" | dpkg --set-selections && \
     mkdir /backup
 
+RUN echo Europe/Paris | tee /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata
+
 ENV CRON_TIME="0 0 * * *"
 
 ADD run.sh /run.sh

@@ -97,11 +97,13 @@ if ${BACKUP_FTP} ;then
 else
     echo "   FTP upload failed"
 fi
-
+ncftpls -x "-N1t" -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ftp://${FTP_HOST}${FTP_DIRECTORY}/backup | wc -l
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    while [ \$(ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}\${FTP_DIRECTORY}/backup | wc -l) -gt \${MAX_BACKUPS} ];
-    do
+    BACKUP_TOTAL_DIR=\$(ncftpls -x "-N1t" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}\${FTP_DIRECTORY}/backup | wc -l)
+    echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
+
+    if \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ;then
         BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1tr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | grep backup | head -1)
         if \${BACKUP_TO_BE_DELETED} ;then
           echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
@@ -109,7 +111,9 @@ if [ -n "\${MAX_BACKUPS}" ]; then
         else
           echo "    No backup to delete..."
         fi
-    done
+    else
+      echo "    No backup to delete..."
+    fi
 fi
 
 echo "=> Remove Backup Directory"
