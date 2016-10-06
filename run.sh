@@ -19,7 +19,6 @@ FTP_USER=${FTP_USER}
 FTP_PASS=${FTP_PASS}
 FTP_DIRECTORY=${FTP_DIRECTORY}
 
-
 [[ ( -z "${MONGODB_USER}" ) && ( -n "${MONGODB_PASS}" ) ]] && MONGODB_USER='admin'
 
 [[ ( -n "${MONGODB_USER}" ) ]] && USER_STR=" --username ${MONGODB_USER}"
@@ -49,7 +48,6 @@ cat <<EOF >> /backup.sh
 #!/bin/bash
 MAX_BACKUPS=${MAX_BACKUPS}
 
-
 echo "=> Backup started"
 BACKUP_NAME=backup_\$(date +\%Y.\%m.\%d.\%H)
 
@@ -70,7 +68,6 @@ for i in \$(ls /backup/\${BACKUP_NAME}/MONGO -N1); do
   rm -rf /backup/\${BACKUP_NAME}/MONGO/\${i}
 done
 
-
 for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u\${MYSQL_USER} -p\${MYSQL_PASS} | grep -v 'Database\|information_schema\|mysql\|performance_schema'); do
   if ${BACKUP_MYSQL_CMD} ;then
       echo "   Dump Mysql \$i succeeded"
@@ -80,13 +77,11 @@ for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u
   fi
 done
 
-
 for i in \$(ls /backup/\${BACKUP_NAME}/MYSQL -N1); do
   cd
   tar czvf /backup/\${BACKUP_NAME}/MYSQL/\${i}.tar.gz -C /backup/\${BACKUP_NAME}/MYSQL \${i}
   rm -rf /backup/\${BACKUP_NAME}/MYSQL/\${i}
 done
-
 
 for i in \$(ls /exports/ -N1); do
   tar czvf /backup/\${BACKUP_NAME}/FILES/\${i}.tar.gz -C /exports \${i}
