@@ -101,6 +101,7 @@ fi
 
 echo "=> Remove Backup Directory"
 rm -rf /backup/\${BACKUP_NAME}
+rm -rf /backup/\${BACKUP_NAME}.tar.gz
 
 echo "=> Backup done"
 EOF
