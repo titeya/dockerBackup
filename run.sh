@@ -72,9 +72,9 @@ for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u
   fi
 done
 
-cp -R /exports /backup/${BACKUP_NAME}/FILES/
+cp -R /exports /backup/\${BACKUP_NAME}/FILES/
 
-tar czvf /backup/${BACKUP_NAME}.tar.gz /backup/${BACKUP_NAME}
+tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
 
 if ${BACKUP_FTP} ;then
     echo "   FTP upload succeeded"
