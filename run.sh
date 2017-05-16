@@ -83,7 +83,7 @@ else
 fi
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    BACKUP_TOTAL_DIR=\$(ncftpls -x "-ltr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}\${FTP_DIRECTORY}/backup | wc -l)
+    BACKUP_TOTAL_DIR=\$(ncftpls -x "-ltr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}\${FTP_DIRECTORY} | wc -l)
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
