@@ -132,3 +132,4 @@ echo "${CRON_TIME} /backup.sh >> /backup.log 2>&1" > /crontab.conf
 crontab  /crontab.conf
 echo "=> Running cron job"
 exec cron -f
+
