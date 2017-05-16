@@ -76,21 +76,27 @@ cp -R /exports /backup/\${BACKUP_NAME}/FILES/
 
 tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
 
+echo "   Compression du dossier \${BACKUP_NAME} > \${BACKUP_NAME}.tar.gz"
+sleep 30
+
 if ${BACKUP_FTP} ;then
     echo "   FTP upload succeeded"
 else
     echo "   FTP upload failed"
 fi
 
+echo "   Verification et nettoyage des backups"
+sleep 5
+
 if [ -n "\${MAX_BACKUPS}" ]; then
     BACKUP_TOTAL_DIR=\$(curl -l -s ftp://\${FTP_HOST}\${FTP_DIRECTORY}/ --user \${FTP_USER}:\${FTP_PASS} | grep backup | wc -l)
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
-        BACKUP_TO_BE_DELETED=\$(curl -l -s ftp://\${FTP_HOST}\${FTP_DIRECTORY}/ --user \${FTP_USER}:'\${FTP_PASS}' | grep backup | head -1)
+        BACKUP_TO_BE_DELETED=\$(curl -l -s ftp://\${FTP_HOST}\${FTP_DIRECTORY}/ --user \${FTP_USER}:\${FTP_PASS} | grep backup | head -1)
         if [ -n "\${BACKUP_TO_BE_DELETED}" ] ;then
           echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
-          curl ftp://\${FTP_HOST} -X 'DELE \${FTP_DIRECTORY}${BACKUP_TO_BE_DELETED}' --user \${FTP_USER}:\'${FTP_PASS}'
+          curl ftp://\${FTP_HOST} -X "DELE \${FTP_DIRECTORY}/\${BACKUP_TO_BE_DELETED}" --user \${FTP_USER}:\${FTP_PASS}
         else
           echo "    No backup to delete..."
         fi
