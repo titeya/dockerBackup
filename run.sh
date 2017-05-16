@@ -40,7 +40,7 @@ BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONG
 
 BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
 
-BACKUP_FTP="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_NAME}"
+BACKUP_FTP="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/${BACKUP_NAME}.tar.gz"
 
 echo "=> Creating backup script"
 rm -f /backup.sh
@@ -62,11 +62,6 @@ else
     rm -rf /backup/\${BACKUP_NAME}/MONGO
 fi
 
-for i in \$(ls /backup/\${BACKUP_NAME}/MONGO -N1); do
-  cd
-  tar czvf /backup/\${BACKUP_NAME}/MONGO/\${i}.tar.gz -C /backup/\${BACKUP_NAME}/MONGO \${i}
-  rm -rf /backup/\${BACKUP_NAME}/MONGO/\${i}
-done
 
 for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u\${MYSQL_USER} -p\${MYSQL_PASS} | grep -v 'Database\|information_schema\|mysql\|performance_schema'); do
   if ${BACKUP_MYSQL_CMD} ;then
@@ -77,15 +72,9 @@ for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u
   fi
 done
 
-for i in \$(ls /backup/\${BACKUP_NAME}/MYSQL -N1); do
-  cd
-  tar czvf /backup/\${BACKUP_NAME}/MYSQL/\${i}.tar.gz -C /backup/\${BACKUP_NAME}/MYSQL \${i}
-  rm -rf /backup/\${BACKUP_NAME}/MYSQL/\${i}
-done
+cp -R /exports /backup/${BACKUP_NAME}/FILES/
 
-for i in \$(ls /exports/ -N1); do
-  tar czvf /backup/\${BACKUP_NAME}/FILES/\${i}.tar.gz -C /exports \${i}
-done
+tar czvf /backup/${BACKUP_NAME}.tar.gz /backup/${BACKUP_NAME}
 
 if ${BACKUP_FTP} ;then
     echo "   FTP upload succeeded"
@@ -98,10 +87,10 @@ if [ -n "\${MAX_BACKUPS}" ]; then
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
-        BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1tr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY}/backup | grep backup | head -1  | awk '{print \$9}')
+        BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1tr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY} | grep backup | head -1)
         if [ -n "\${BACKUP_TO_BE_DELETED}" ] ;then
           echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
-          echo "rm -rf \${FTP_DIRECTORY}/backup/\${BACKUP_TO_BE_DELETED}" | ncftp -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} \${FTP_HOST}
+          echo "rm -rf \${FTP_DIRECTORY}/\${BACKUP_TO_BE_DELETED}" | ncftp -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} \${FTP_HOST}
         else
           echo "    No backup to delete..."
         fi
