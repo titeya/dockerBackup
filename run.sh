@@ -40,7 +40,7 @@ BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONG
 
 BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
 
-BACKUP_FTP="ncftpput -R -v -u ${FTP_USER} -p ${FTP_PASS} -P ${FTP_PORT} ${FTP_HOST} ${FTP_DIRECTORY} /backup/"'${BACKUP_NAME}'".tar.gz"
+BACKUP_FTP="curl -T /backup/"'${BACKUP_NAME}'".tar.gz ftp://"'${FTP_HOST}'""'${FTP_DIRECTORY}'"/ --user "'${FTP_USER}'":"'${FTP_PASS}'" "
 
 echo "=> Creating backup script"
 rm -f /backup.sh
@@ -83,14 +83,14 @@ else
 fi
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    BACKUP_TOTAL_DIR=\$(ncftpls -x "-ltr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}\${FTP_DIRECTORY} | wc -l)
+    BACKUP_TOTAL_DIR=\$(curl -l -s ftp://\${FTP_HOST}\${FTP_DIRECTORY}/ --user \${FTP_USER}:\${FTP_PASS} | grep backup | wc -l)
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
-        BACKUP_TO_BE_DELETED=\$(ncftpls -x "-N1tr" -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} ftp://\${FTP_HOST}/\${FTP_DIRECTORY} | grep backup | head -1)
+        BACKUP_TO_BE_DELETED=\$(curl -l -s ftp://\${FTP_HOST}\${FTP_DIRECTORY}/ --user \${FTP_USER}:'\${FTP_PASS}' | grep backup | head -1)
         if [ -n "\${BACKUP_TO_BE_DELETED}" ] ;then
           echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
-          echo "rm -rf \${FTP_DIRECTORY}/\${BACKUP_TO_BE_DELETED}" | ncftp -u \${FTP_USER} -p \${FTP_PASS} -P \${FTP_PORT} \${FTP_HOST}
+          curl ftp://\${FTP_HOST} -X 'DELE \${FTP_DIRECTORY}${BACKUP_TO_BE_DELETED}' --user \${FTP_USER}:\'${FTP_PASS}'
         else
           echo "    No backup to delete..."
         fi
