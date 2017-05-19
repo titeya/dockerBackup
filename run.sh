@@ -79,11 +79,8 @@ tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
 echo "   Compression du dossier \${BACKUP_NAME} > \${BACKUP_NAME}.tar.gz"
 sleep 30
 
-if ${BACKUP_FTP} ;then
-    echo "   FTP upload succeeded"
-else
-    echo "   FTP upload failed"
-fi
+${BACKUP_FTP}
+echo "   FTP upload succeeded"
 
 echo "   Verification et nettoyage des backups"
 sleep 5
@@ -130,10 +127,10 @@ chmod +x /restore.sh
 touch /backup.log
 tail -F /backup.log &
 
-if [ -n "${INIT_BACKUP}" ]; then
-    echo "=> Create a backup on the startup"
-    /backup.sh
-fi
+# if [ -n "${INIT_BACKUP}" ]; then
+#    echo "=> Create a backup on the startup"
+#    /backup.sh
+# fi
 
 echo "${CRON_TIME} /backup.sh >> /backup.log 2>&1" > /crontab.conf
 crontab  /crontab.conf
