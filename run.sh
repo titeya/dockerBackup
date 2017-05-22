@@ -66,11 +66,8 @@ else
     echo "   Dump Mongo failed"
 fi
 
-for i in ${BACKUP_MYSQL_CMD}; do
-  if ${BACKUP_MYSQL_DUMP} ;then
-    echo "Dump Mysql succeeded"
-  else
-    echo "Dump Mysql failed"
+for i in $( ${BACKUP_MYSQL_CMD} ); do
+  ${BACKUP_MYSQL_DUMP}
 done
 
 cp -R /exports /backup/\${BACKUP_NAME}/FILES/
