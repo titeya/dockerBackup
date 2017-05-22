@@ -66,7 +66,7 @@ else
     echo "   Dump Mongo failed"
 fi
 
-for i in BACKUP_MYSQL_CMD; do
+for i in ${BACKUP_MYSQL_CMD}; do
   if ${BACKUP_MYSQL_DUMP} ;then
     echo "Dump Mysql succeeded"
   else
@@ -87,14 +87,14 @@ echo "   Verification et nettoyage des backups"
 sleep 5
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    BACKUP_TOTAL_DIR=\${BACKUP_FTP_NB}
+    BACKUP_TOTAL_DIR=${BACKUP_FTP_NB}
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
-        BACKUP_TO_BE_DELETED=\$BACKUP_FTP_TOBED
+        BACKUP_TO_BE_DELETED=${BACKUP_FTP_TOBED}
         if [ -n "\${BACKUP_TO_BE_DELETED}" ] ;then
           echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
-          $BACKUP_FTP_DELETE
+          ${BACKUP_FTP_DELETE}
         else
           echo "    No backup to delete..."
         fi
