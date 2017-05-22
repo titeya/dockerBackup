@@ -75,7 +75,7 @@ cp -R /exports /backup/\${BACKUP_NAME}/FILES/
 tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
 
 echo "   Compression du dossier \${BACKUP_NAME} > \${BACKUP_NAME}.tar.gz"
-sleep 30
+sleep 5
 
 ${BACKUP_FTP}
 echo "   FTP upload succeeded"
@@ -84,7 +84,7 @@ echo "   Verification et nettoyage des backups"
 sleep 5
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    BACKUP_TOTAL_DIR=${BACKUP_FTP_NB}
+    BACKUP_TOTAL_DIR=\$( ${BACKUP_FTP_NB} )
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
