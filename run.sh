@@ -66,7 +66,7 @@ else
     echo "   Dump Mongo failed"
 fi
 
-for i in $( ${BACKUP_MYSQL_CMD} ); do
+for i in \$( ${BACKUP_MYSQL_CMD} ); do
   ${BACKUP_MYSQL_DUMP}
 done
 
