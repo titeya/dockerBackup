@@ -38,9 +38,14 @@ FTP_DIRECTORY=${FTP_DIRECTORY}
 
 BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} ${EXTRA_OPTS}"
 
-BACKUP_MYSQL_CMD="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
+BACKUP_MYSQL_CMD="echo 'show databases;' | mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} | grep -v 'Database\|information_schema\|mysql\|performance_schema'"
+BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
 
-BACKUP_FTP="curl -T /backup/"'${BACKUP_NAME}'".tar.gz ftp://"'${FTP_HOST}'""'${FTP_DIRECTORY}'"/ --user "'${FTP_USER}'":"'${FTP_PASS}'" "
+BACKUP_FTP="curl -T /backup/"'${BACKUP_NAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
+BACKUP_FTP_NB="curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | wc -l"
+BACKUP_FTP_TOBED="curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | head -1"
+BACKUP_FTP_DELETE=" curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${BACKUP_TO_BE_DELETED}'"\" --user ${FTP_USER}:${FTP_PASS}"
+
 
 echo "=> Creating backup script"
 rm -f /backup.sh
@@ -59,17 +64,13 @@ if ${BACKUP_MONGO_CMD} ;then
     echo "   Dump Mongo succeeded"
 else
     echo "   Dump Mongo failed"
-    rm -rf /backup/\${BACKUP_NAME}/MONGO
 fi
 
-
-for i in \$( echo "show databases;" | mysql -h\${MYSQL_HOST} -P\${MYSQL_PORT} -u\${MYSQL_USER} -p\${MYSQL_PASS} | grep -v 'Database\|information_schema\|mysql\|performance_schema'); do
-  if ${BACKUP_MYSQL_CMD} ;then
-      echo "   Dump Mysql \$i succeeded"
+for i in BACKUP_MYSQL_CMD; do
+  if ${BACKUP_MYSQL_DUMP} ;then
+    echo "Dump Mysql succeeded"
   else
-      echo "   Dump Mysql \$i failed"
-      rm -rf /backup/\${BACKUP_NAME}/MYSQL/\$i.sql
-  fi
+    echo "Dump Mysql failed"
 done
 
 cp -R /exports /backup/\${BACKUP_NAME}/FILES/
@@ -86,14 +87,14 @@ echo "   Verification et nettoyage des backups"
 sleep 5
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    BACKUP_TOTAL_DIR=\$(curl -l -s ftp://\${FTP_HOST}\${FTP_DIRECTORY}/ --user \${FTP_USER}:\${FTP_PASS} | grep backup | wc -l)
+    BACKUP_TOTAL_DIR=\${BACKUP_FTP_NB}
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
-        BACKUP_TO_BE_DELETED=\$(curl -l -s ftp://\${FTP_HOST}\${FTP_DIRECTORY}/ --user \${FTP_USER}:\${FTP_PASS} | grep backup | head -1)
+        BACKUP_TO_BE_DELETED=\$BACKUP_FTP_TOBED
         if [ -n "\${BACKUP_TO_BE_DELETED}" ] ;then
           echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
-          curl ftp://\${FTP_HOST} -X "DELE \${FTP_DIRECTORY}/\${BACKUP_TO_BE_DELETED}" --user \${FTP_USER}:\${FTP_PASS}
+          $BACKUP_FTP_DELETE
         else
           echo "    No backup to delete..."
         fi
