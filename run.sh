@@ -43,7 +43,7 @@ BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p$
 
 BACKUP_FTP="curl -T /backup/"'${BACKUP_NAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
 BACKUP_FTP_NB="curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | wc -l"
-BACKUP_FTP_TOBED="curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | head -1"
+BACKUP_FTP_TOBED="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | head -1 )"
 BACKUP_FTP_DELETE=" curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${BACKUP_TO_BE_DELETED}'"\" --user ${FTP_USER}:${FTP_PASS}"
 
 
@@ -84,11 +84,11 @@ echo "   Verification et nettoyage des backups"
 sleep 5
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    BACKUP_TOTAL_DIR=$( \${BACKUP_FTP_NB} )
+    BACKUP_TOTAL_DIR=${BACKUP_FTP_NB}
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
-        BACKUP_TO_BE_DELETED=$(${BACKUP_FTP_TOBED})
+        BACKUP_TO_BE_DELETED=${BACKUP_FTP_TOBED}
         if [ -n "\${BACKUP_TO_BE_DELETED}" ] ;then
           echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
           ${BACKUP_FTP_DELETE}
@@ -104,7 +104,8 @@ echo "=> Remove Backup Directory"
 rm -rf /backup/\${BACKUP_NAME}
 rm -rf /backup/\${BACKUP_NAME}.tar.gz
 
-echo "=> Backup done"
+echo "=> Backup done" 
+
 EOF
 chmod +x /backup.sh
 
@@ -119,6 +120,7 @@ else
     echo "   Restore failed"
 fi
 echo "=> Done"
+
 EOF
 chmod +x /restore.sh
 
