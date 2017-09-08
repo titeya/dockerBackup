@@ -84,7 +84,7 @@ echo "   Verification et nettoyage des backups"
 sleep 5
 
 if [ -n "\${MAX_BACKUPS}" ]; then
-    BACKUP_TOTAL_DIR=\$( ${BACKUP_FTP_NB} )
+    BACKUP_TOTAL_DIR=$( \${BACKUP_FTP_NB} )
     echo "  Total Backup : \${BACKUP_TOTAL_DIR}"
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
