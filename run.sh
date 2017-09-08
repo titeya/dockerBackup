@@ -43,8 +43,8 @@ BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p$
 
 BACKUP_FTP="curl -T /backup/"'${BACKUP_NAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
 BACKUP_FTP_NB="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | wc -l )"
-BACKUP_FTP_TOBED="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | head -1 )"
-BACKUP_FTP_DELETE=" curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${BACKUP_TO_BE_DELETED}'"\" --user ${FTP_USER}:${FTP_PASS}"
+BACKUP_FTP_TOBED="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup )"
+BACKUP_FTP_DELETE=" curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${SUPP[0]}'"\" --user ${FTP_USER}:${FTP_PASS}"
 
 
 echo "=> Creating backup script"
@@ -89,8 +89,11 @@ if [ -n "\${MAX_BACKUPS}" ]; then
 
     if [ \${BACKUP_TOTAL_DIR} -gt \${MAX_BACKUPS} ];then
         BACKUP_TO_BE_DELETED=${BACKUP_FTP_TOBED}
-        if [ -n "\${BACKUP_TO_BE_DELETED}" ] ;then
-          echo "   Deleting backup \${BACKUP_TO_BE_DELETED}"
+        array=(${BACKUP_TO_BE_DELETED// / })
+        readarray -t SUPP < <(printf '%s\n' "${array[@]}" | sort)
+        
+        if [ -n "\${SUPP[0]}" ] ;then
+          echo "   Deleting backup \${SUPP[0]}"
           ${BACKUP_FTP_DELETE}
         else
           echo "    No backup to delete..."
