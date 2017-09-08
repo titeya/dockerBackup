@@ -70,7 +70,7 @@ for i in \$( ${BACKUP_MYSQL_CMD} ); do
   ${BACKUP_MYSQL_DUMP}
 done
 
-cp -R /exports /backup/\${BACKUP_NAME}/FILES/
+cp -LR /exports /backup/\${BACKUP_NAME}/FILES/
 
 tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
 
