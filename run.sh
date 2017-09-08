@@ -91,13 +91,8 @@ if [ -n "\${MAX_BACKUPS}" ]; then
         BACKUP_TO_BE_DELETED=${BACKUP_FTP_TOBED}
         array=(${BACKUP_TO_BE_DELETED// / })
         readarray -t SUPP < <(printf '%s\n' "${array[@]}" | sort)
-        
-        if [ -n "\${SUPP[0]}" ] ;then
-          echo "   Deleting backup \${SUPP[0]}"
-          ${BACKUP_FTP_DELETE}
-        else
-          echo "    No backup to delete..."
-        fi
+        echo "   Deleting backup \${SUPP[0]}"
+        ${BACKUP_FTP_DELETE}
     else
       echo "    No backup to delete..."
     fi
