@@ -44,7 +44,7 @@ BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p$
 BACKUP_FTP="curl -T /backup/"'${BACKUP_NAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
 BACKUP_FTP_NB="curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | wc -l"
 BACKUP_FTP_TOBED="curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | head -1"
-BACKUP_FTP_DELETE=" curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${BACKUP_TO_BE_DELETED}'"\" --user ${FTP_USER}:${FTP_PASS}"
+BACKUP_FTP_DELETE="$(curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${BACKUP_TO_BE_DELETED}'"\" --user ${FTP_USER}:${FTP_PASS})"
 
 
 echo "=> Creating backup script"
@@ -70,7 +70,7 @@ for i in \$( ${BACKUP_MYSQL_CMD} ); do
   ${BACKUP_MYSQL_DUMP}
 done
 
-cp -LR /exports /backup/\${BACKUP_NAME}/FILES/
+cp -R -L /exports/export /backup/\${BACKUP_NAME}/FILES/
 
 tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
 
