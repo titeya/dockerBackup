@@ -52,6 +52,7 @@ rm -f /backup.sh
 cat <<EOF >> /backup.sh
 #!/bin/bash
 MAX_BACKUPS=${MAX_BACKUPS}
+FILES_PATH=${FILES_PATH}
 
 echo "=> Backup started"
 BACKUP_NAME=backup_\$(date +\%Y.\%m.\%d.\%H)
@@ -70,7 +71,7 @@ for i in \$( ${BACKUP_MYSQL_CMD} ); do
   ${BACKUP_MYSQL_DUMP}
 done
 
-cp -R -L /exports/export /backup/\${BACKUP_NAME}/FILES/
+cp -R -L /exports/\${FILES_PATH} /backup/\${BACKUP_NAME}/FILES/
 
 tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
 
