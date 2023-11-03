@@ -19,6 +19,9 @@ FTP_USER=${FTP_USER}
 FTP_PASS=${FTP_PASS}
 FTP_DIRECTORY=${FTP_DIRECTORY}
 
+BACKUP_NAME=${BACKUP_NAME}
+
+
 [[ ( -z "${MONGODB_USER}" ) && ( -n "${MONGODB_PASS}" ) ]] && MONGODB_USER='admin'
 
 [[ ( -n "${MONGODB_USER}" ) ]] && USER_STR=" --username ${MONGODB_USER}"
@@ -36,12 +39,12 @@ FTP_DIRECTORY=${FTP_DIRECTORY}
 [ -z "${FTP_PASS}" ] && { echo "=> FTP_PASS cannot be empty" && exit 1; }
 [ -z "${FTP_DIRECTORY}" ] && { echo "=> FTP_DIRECTORY cannot be empty" && exit 1; }
 
-BACKUP_MONGO_CMD="mongodump --out /backup/"'${BACKUP_NAME}'"/MONGO --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} ${EXTRA_OPTS}"
+BACKUP_MONGO_CMD="mongodump --out /backup/MONGO --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} ${EXTRA_OPTS}"
 
 BACKUP_MYSQL_CMD="echo 'show databases;' | mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} | grep -v 'Database\|information_schema\|mysql\|performance_schema'"
-BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/"'${BACKUP_NAME}'"/MYSQL/"'${i}'".sql"
+BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/MYSQL/"'${i}'".sql"
 
-BACKUP_FTP="curl -T /backup/"'${BACKUP_NAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
+BACKUP_FTP="curl -T /backup/"'${BACKUP_FULLNAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
 BACKUP_FTP_NB="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | wc -l )"
 BACKUP_FTP_TOBED="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup )"
 BACKUP_FTP_DELETE=" curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${SUPP[0]}'"\" --user ${FTP_USER}:${FTP_PASS}"
@@ -55,11 +58,10 @@ MAX_BACKUPS=${MAX_BACKUPS}
 FILES_PATH=${FILES_PATH}
 
 echo "=> Backup started"
-BACKUP_NAME=backup_\$(date +\%Y.\%m.\%d.\%H)
+BACKUP_FULLNAME=\${BACKUP_NAME}_\$(date +\%Y.\%m.\%d.\%H)
 
-mkdir -p /backup/\${BACKUP_NAME}/MONGO
-mkdir -p /backup/\${BACKUP_NAME}/MYSQL
-mkdir -p /backup/\${BACKUP_NAME}/FILES
+mkdir -p /backup/MONGO
+mkdir -p /backup/MYSQL
 
 if ${BACKUP_MONGO_CMD} ;then
     echo "   Dump Mongo succeeded"
@@ -71,11 +73,9 @@ for i in \$( ${BACKUP_MYSQL_CMD} ); do
   ${BACKUP_MYSQL_DUMP}
 done
 
-cp -R -L /exports/\${FILES_PATH} /backup/\${BACKUP_NAME}/FILES/
+tar --exclude='mysql' --exclude='ssh' --exclude='.ssh' --exclude='lost+found' -czvf /backup/\${BACKUP_FULLNAME}.tar.gz /backup/MONGO /backup/MYSQL /exports
 
-tar czvf /backup/\${BACKUP_NAME}.tar.gz /backup/\${BACKUP_NAME}
-
-echo "   Compression du dossier \${BACKUP_NAME} > \${BACKUP_NAME}.tar.gz"
+echo "   Compression vers \${BACKUP_FULLNAME}.tar.gz"
 sleep 5
 
 ${BACKUP_FTP}
@@ -100,8 +100,8 @@ if [ -n "\${MAX_BACKUPS}" ]; then
 fi
 
 echo "=> Remove Backup Directory"
-rm -rf /backup/\${BACKUP_NAME}
-rm -rf /backup/\${BACKUP_NAME}.tar.gz
+rm -rf /backup/\${BACKUP_FULLNAME}
+rm -rf /backup/\${BACKUP_FULLNAME}.tar.gz
 
 echo "=> Backup done" 
 
