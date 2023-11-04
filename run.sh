@@ -6,12 +6,20 @@ MONGODB_PORT=${MONGODB_PORT_27017_TCP_PORT:-${MONGODB_PORT}}
 MONGODB_PORT=${MONGODB_PORT_1_27017_TCP_PORT:-${MONGODB_PORT}}
 MONGODB_USER=${MONGODB_USER:-${MONGODB_ENV_MONGODB_USER}}
 MONGODB_PASS=${MONGODB_PASS:-${MONGODB_ENV_MONGODB_PASS}}
+
 MYSQL_HOST=${MYSQL_PORT_3306_TCP_ADDR:-${MYSQL_HOST}}
 MYSQL_HOST=${MYSQL_PORT_1_3306_TCP_ADDR:-${MYSQL_HOST}}
 MYSQL_PORT=${MYSQL_PORT_3306_TCP_PORT:-${MYSQL_PORT}}
 MYSQL_PORT=${MYSQL_PORT_1_3306_TCP_PORT:-${MYSQL_PORT}}
 MYSQL_USER=${MYSQL_USER:-${MYSQL_ENV_MYSQL_USER}}
 MYSQL_PASS=${MYSQL_PASS:-${MYSQL_ENV_MYSQL_PASS}}
+
+PSQL_HOST=${PSQL_PORT_5432_TCP_ADDR:-${PSQL_HOST}}
+PSQL_HOST=${PSQL_PORT_1_5432_TCP_ADDR:-${PSQL_HOST}}
+PSQL_PORT=${PSQL_PORT_5432_TCP_PORT:-${PSQL_PORT}}
+PSQL_PORT=${PSQL_PORT_1_5432_TCP_PORT:-${PSQL_PORT}}
+PSQL_USER=${PSQL_USER:-${PSQL_ENV_PSQL_USER}}
+PSQL_PASS=${PSQL_PASS:-${PSQL_ENV_PSQL_PASS}}
 
 FTP_HOST=${FTP_HOST}
 FTP_PORT=${FTP_PORT}
@@ -23,15 +31,9 @@ BACKUP_NAME=${BACKUP_NAME}
 
 
 [[ ( -z "${MONGODB_USER}" ) && ( -n "${MONGODB_PASS}" ) ]] && MONGODB_USER='admin'
-
 [[ ( -n "${MONGODB_USER}" ) ]] && USER_STR=" --username ${MONGODB_USER}"
 [[ ( -n "${MONGODB_PASS}" ) ]] && PASS_STR=" --password ${MONGODB_PASS}"
 [[ ( -n "${MONGODB_DB}" ) ]] && USER_STR=" --db ${MONGODB_DB}"
-
-[ -z "${MYSQL_HOST}" ] && { echo "=> MYSQL_HOST cannot be empty" && exit 1; }
-[ -z "${MYSQL_PORT}" ] && { echo "=> MYSQL_PORT cannot be empty" && exit 1; }
-[ -z "${MYSQL_USER}" ] && { echo "=> MYSQL_USER cannot be empty" && exit 1; }
-[ -z "${MYSQL_PASS}" ] && { echo "=> MYSQL_PASS cannot be empty" && exit 1; }
 
 [ -z "${FTP_HOST}" ] && { echo "=> FTP_HOST cannot be empty" && exit 1; }
 [ -z "${FTP_PORT}" ] && { echo "=> FTP_PORT cannot be empty" && exit 1; }
@@ -42,7 +44,10 @@ BACKUP_NAME=${BACKUP_NAME}
 BACKUP_MONGO_CMD="mongodump --out /backup/MONGO --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} ${EXTRA_OPTS}"
 
 BACKUP_MYSQL_CMD="echo 'show databases;' | mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} | grep -v 'Database\|information_schema\|mysql\|performance_schema'"
-BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} ${EXTRA_OPTS} "'${i}'" > /backup/MYSQL/"'${i}'".sql"
+BACKUP_MYSQL_DUMP="mysqldump -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS}  "'${i}'" > /backup/MYSQL/"'${i}'".sql"
+
+BACKUP_PSQL_CMD="export PGPASSWORD='${PSQL_PASS}'; psql -h${PSQL_HOST} -p${PSQL_PORT} -U${PSQL_USER} -l -t | cut -d'|' -f1 | sed -e 's/ //g' -e '/^$/d'"
+BACKUP_PSQL_DUMP="export PGPASSWORD='${PSQL_PASS}'; pg_dump -h${PSQL_HOST} -p${PSQL_PORT} -U${PSQL_USER} "'${i}'" > /backup/PSQL/"'${i}'".sql"
 
 BACKUP_FTP="curl -T /backup/"'${BACKUP_FULLNAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
 BACKUP_FTP_NB="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | wc -l )"
@@ -58,9 +63,10 @@ MAX_BACKUPS=${MAX_BACKUPS}
 FILES_PATH=${FILES_PATH}
 
 echo "=> Backup started"
-BACKUP_FULLNAME=\${BACKUP_NAME}_\$(date +\%Y.\%m.\%d.\%H)
+BACKUP_FULLNAME="\${BACKUP_NAME}_\$(date +\%Y.\%m.\%d.\%H)"
 
 mkdir -p /backup/MONGO
+mkdir -p /backup/PSQL
 mkdir -p /backup/MYSQL
 
 if ${BACKUP_MONGO_CMD} ;then
@@ -69,11 +75,15 @@ else
     echo "   Dump Mongo failed"
 fi
 
+for i in \$( ${BACKUP_PSQL_CMD} ); do
+  ${BACKUP_PSQL_DUMP}
+done
+
 for i in \$( ${BACKUP_MYSQL_CMD} ); do
   ${BACKUP_MYSQL_DUMP}
 done
 
-tar --exclude='mysql' --exclude='ssh' --exclude='.ssh' --exclude='lost+found' -czvf /backup/\${BACKUP_FULLNAME}.tar.gz /backup/MONGO /backup/MYSQL /exports
+tar --exclude='mysql' --exclude='ssh' --exclude='.ssh' --exclude='composerdev-titeya-com' --exclude='lost+found' -czvf /backup/\${BACKUP_FULLNAME}.tar.gz /backup/MONGO /backup/PSQL /backup/MYSQL /exports
 
 echo "   Compression vers \${BACKUP_FULLNAME}.tar.gz"
 sleep 5
