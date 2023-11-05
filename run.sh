@@ -63,7 +63,7 @@ MAX_BACKUPS=${MAX_BACKUPS}
 FILES_PATH=${FILES_PATH}
 
 echo "=> Backup started"
-BACKUP_FULLNAME="\${BACKUP_NAME}_\$(date +\%Y.\%m.\%d.\%H)"
+BACKUP_FULLNAME="${BACKUP_NAME}_\$(date +\%Y.\%m.\%d.\%H)"
 
 mkdir -p /backup/MONGO
 mkdir -p /backup/PSQL
