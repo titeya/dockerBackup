@@ -50,8 +50,8 @@ BACKUP_PSQL_CMD="export PGPASSWORD='${PSQL_PASS}'; psql -h${PSQL_HOST} -p${PSQL_
 BACKUP_PSQL_DUMP="export PGPASSWORD='${PSQL_PASS}'; pg_dump -h${PSQL_HOST} -p${PSQL_PORT} -U${PSQL_USER} "'${i}'" > /backup/PSQL/"'${i}'".sql"
 
 BACKUP_FTP="curl -T /backup/"'${BACKUP_FULLNAME}'".tar.gz ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS}"
-BACKUP_FTP_NB="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup | wc -l )"
-BACKUP_FTP_TOBED="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY}/ --user ${FTP_USER}:${FTP_PASS} | grep backup )"
+BACKUP_FTP_NB="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY} --user ${FTP_USER}:${FTP_PASS} | wc -l )"
+BACKUP_FTP_TOBED="\$( curl -l -s ftp://${FTP_HOST}${FTP_DIRECTORY} --user ${FTP_USER}:${FTP_PASS} )"
 BACKUP_FTP_DELETE=" curl ftp://${FTP_HOST} -X \"DELE ${FTP_DIRECTORY}/"'${SUPP[0]}'"\" --user ${FTP_USER}:${FTP_PASS}"
 
 
